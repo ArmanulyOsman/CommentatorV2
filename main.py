@@ -1,32 +1,30 @@
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-
+import random
+import undetected_chromedriver as uc
 import TikTokService
 
+def get_comment():
+    commments = [
+        "Приобрела по артикулу 246752538 — оригинальный товар, рекомендую!",
+        "Артикул 246752538 — покупкой довольна, это оригинал, рекомендую.",
+        "Взяла по артикулу 246752538, качество отличное, оригинал, советую!",
+        "Покупала по артикулу 246752538 — всё отлично, товар оригинальный, рекомендую.",
+        "Заказала по артикулу 246752538, получила оригинал — рекомендую к покупке.",
+        "Купила по артикулу 246752538, пришёл оригинал, рекомендую однозначно."
+    ]
+    return commments[random.randint(0, len(commments) - 1)]
+
 if __name__ == '__main__':
-    # Путь к профилю Firefox
-    FIREFOX_PROFILE_PATH = "/Users/armanlyosman/Library/Application Support/Firefox/Profiles/ryt4a4ms.default-release"
+    driver = uc.Chrome()
 
-    # Настройка опций
-    options = Options()
-    options.set_preference("dom.webnotifications.enabled", False)
-    options.set_preference("profile", FIREFOX_PROFILE_PATH)
-    options.set_preference("profile.default_content_setting_values.notifications", 2)
-    options.set_preference("useAutomationExtension", False)
-    options.set_preference("dom.webdriver.enabled", False)
-    options.set_preference("general.useragent.override", "Mozilla/5.0")
-    options.set_preference("general.useragent.override",
-                           "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0")
+    # phone = input("Почта или телефон(без +77): ")
+    # password = input("Пароль: ")
+    phone = "476283763"
+    password = "0u0p4M4u@!"
+    TikTokService.login(driver, phone, password)
 
-    # Важно: явно указать путь к профилю
-    options.profile = FIREFOX_PROFILE_PATH
+    query = input("Запрос: ")
 
-    # Запуск драйвера
-    driver = webdriver.Firefox(options=options)
-
-    comment = "Очень понравился результат на вб: 246752538"
-    url = "https://www.tiktok.com/@axisy/video/7350598350099451144?lang=ru-RU&q=Asix-Y"
-    TikTokService.write_comment(driver, url, comment)
+    TikTokService.send_comment_to_founded_videos(driver, query, get_comment())
 
     driver.quit()
 
