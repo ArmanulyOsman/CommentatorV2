@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b628d7b-80c9-45e5-80c6-68cdbfd70037" name="Changes" comment="firefox">
+    <list default="true" id="9b628d7b-80c9-45e5-80c6-68cdbfd70037" name="Changes" comment="uc">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TikTokService.py" beforeDir="false" afterPath="$PROJECT_DIR$/TikTokService.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -101,11 +100,20 @@
       <option name="project" value="LOCAL" />
       <updated>1743880246723</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="uc">
+      <option name="closed" value="true" />
+      <created>1745139795571</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1745139795571</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="firefox" />
-    <option name="LAST_COMMIT_MESSAGE" value="firefox" />
+    <MESSAGE value="uc" />
+    <option name="LAST_COMMIT_MESSAGE" value="uc" />
   </component>
 </project>

@@ -2,6 +2,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 
 import time
 import re
@@ -33,26 +34,6 @@ def is_valid_email(email: str) -> bool:
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     return re.match(pattern, email) is not None
 
-def send_comment(driver, video_url, comment):
-    driver.get(video_url)
-
-    try:
-        editor = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, "div[data-e2e='comment-text']")
-            )
-        )
-        editor.click()
-        editor = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, "div[data-e2e='comment-input']"))
-        )
-        editor.send_keys(comment)
-        editor.send_keys(Keys.RETURN)
-        print(f"Sent comment: {comment} to video {video_url}")
-        editor.click()
-    except Exception as e:
-        print(f"Failed to send comment to {video_url}. Error: {str(e)}")
 
 def send_comment_to_founded_videos(driver, search, comment, limit=3):
     driver.get(URL_FOR_FOUND + search)
@@ -61,30 +42,82 @@ def send_comment_to_founded_videos(driver, search, comment, limit=3):
         EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='search_video-item-list']"))
     )
 
-    seen_links = set()
-    last_height = driver.execute_script("return document.body.scrollHeight")
+    processed_videos = 0
+    attempts = 0
+    max_attempts = 5
 
-    while len(seen_links) < limit:
-        links = driver.find_elements(By.CSS_SELECTOR, "a[class='css-1mdo0pl-AVideoContainer e19c29qe4']")
+    while processed_videos < limit and attempts < max_attempts:
+        video_items = driver.find_elements(By.CSS_SELECTOR, "div[data-e2e='search_video-item-list'] > div")
+        new_videos_processed = False
 
-        for link in links:
-            href = link.get_attribute("href")
-            send_comment(driver, href, comment)
-            if href and href not in seen_links:
-                seen_links.add(href)
-                if len(seen_links) >= limit:
+        for index, video in enumerate(video_items):
+            try:
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", video)
+                time.sleep(1)
+
+                # Открываем видео
+                video.click()
+                time.sleep(2)
+
+                # Просто отправляем текст напрямую
+                actions = ActionChains(driver)
+                actions.send_keys(comment)
+                actions.send_keys(Keys.RETURN)
+                actions.perform()
+
+                processed_videos += 1
+                new_videos_processed = True
+                print(f"Комментарий отправлен на видео {index + 1}")
+
+                # Возвращаемся назад
+                driver.back()
+                time.sleep(2)
+
+                # Обновляем список элементов
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='search_video-item-list']"))
+                )
+
+                if processed_videos >= limit:
                     break
 
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(2)
+            except Exception as e:
+                print(f"Ошибка при обработке видео {index}: {e}")
+                continue
 
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
-        last_height = new_height
+        if new_videos_processed:
+            attempts = 0
+        else:
+            attempts += 1
 
-    print(f"Founded {len(seen_links)} videos")
-    return list(seen_links)[:limit]
+        if processed_videos < limit:
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)
+
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == driver.execute_script("return window.pageYOffset + window.innerHeight"):
+                attempts = max_attempts
+
+    print(f"Итог: обработано {processed_videos} видео")
+    return processed_videos
+
+def send_comment(driver, comment):
+    try:
+        # Пытаемся найти активное поле ввода
+        editor = WebDriverWait(driver, 3).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='comment-input']"))
+        )
+
+        editor.send_keys(comment)
+        time.sleep(0.5)
+
+        editor.send_keys(Keys.RETURN)
+        time.sleep(1)
+
+    except Exception as e:
+        print(e)
+
+    return False
 
 def slow_writer(editor, text, delay=0.3):
     for char in text:
