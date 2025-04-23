@@ -35,14 +35,14 @@ if __name__ == '__main__':
     # password = input("Пароль: ")
     phone = "476283763"
     password = "0u0p4M4u@!"
-
+    username = "mrBreakfast"
 
 
     TikTokService.login(driver, phone, password)
 
     query = input("Запрос: ")
 
-    TikTokService.process_video_comments(driver, query, get_comment(), templates)
+    TikTokService.process_video_comments(driver, query, get_comment(), templates, username)
 
     driver.quit()
 
