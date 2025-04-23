@@ -35,7 +35,7 @@ def is_valid_email(email: str) -> bool:
     return re.match(pattern, email) is not None
 
 
-def process_video_comments(driver, search, comment, templates=None, limit=3):
+def process_video_comments(driver, search, comment, templates, limit=3):
     """Основная функция для обработки видео с возможностью ответа на комментарии"""
     if not open_search_page(driver, search):
         return 0
@@ -46,27 +46,16 @@ def process_video_comments(driver, search, comment, templates=None, limit=3):
     if not open_first_video(driver):
         return 0
 
-    while processed_count < limit and attempts < 5:
-        try:
-            # 1. Отправляем основной комментарий
-            if send_comment(driver, comment):
-                processed_count += 1
-                attempts = 0
-                print(f"Основной комментарий отправлен ({processed_count}/{limit})")
-
-                # 2. Если указаны шаблоны, ищем и отвечаем на комментарии
-                if templates:
-                    print("Проверяем комментарии на совпадения...")
-                    response_by_template(driver, templates, "Спасибо за ваш отзыв!")
-
-            # 3. Переходим к следующему видео
-            if processed_count < limit and not go_to_next_video(driver):
-                break
-
-        except Exception as e:
-            print(f"Ошибка в основном цикле: {e}")
-            attempts += 1
-            continue
+    while processed_count < limit:
+        if send_comment(driver, comment):
+            if templates:
+                response_by_template(
+                    driver=driver,
+                    templates=templates,
+                    comment=comment,
+                    max_comments_to_check=40,
+                    max_scroll_attempts=3
+                )
 
     print(f"Итог: обработано {processed_count} видео")
     return processed_count
@@ -155,52 +144,82 @@ def open_search_page(driver, search):
         return False
 
 
-def response_by_template(driver, templates, comment, max_comments_to_check=30):
+def response_by_template(driver, templates, comment, max_comments_to_check=30, max_scroll_attempts=3):
     """
-    Анализирует комментарии и отвечает, если найдет совпадение с шаблонами
+    Анализирует комментарии с поддержкой скроллинга и отвечает по шаблонам
 
     :param driver: WebDriver
-    :param templates: list - список фраз для поиска в комментариях
-    :param comment: str - комментарий для ответа
-    :param max_comments_to_check: int - максимальное количество проверяемых комментариев
+    :param templates: list - список фраз для поиска
+    :param comment: str - ответный комментарий
+    :param max_comments_to_check: int - максимум комментариев для анализа
+    :param max_scroll_attempts: int - максимум попыток скроллинга
     :return: bool - был ли отправлен ответ
     """
     try:
         # Ожидаем загрузки комментариев
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-1i7ohvi-DivCommentItemContainer"))
         )
 
-        # Получаем список комментариев
-        comments = driver.find_elements(By.CSS_SELECTOR, "div.css-1i7ohvi-DivCommentItemContainer")[
-                   :max_comments_to_check]
+        collected_comments = []
+        scroll_attempts = 0
+        last_height = driver.execute_script("return document.documentElement.scrollHeight")
 
-        for comment_element in comments:
+        while len(collected_comments) < max_comments_to_check and scroll_attempts < max_scroll_attempts:
+            # Собираем текущие комментарии
+            current_comments = driver.find_elements(By.CSS_SELECTOR, "div.css-1i7ohvi-DivCommentItemContainer")
+
+            # Добавляем только новые комментарии
+            for cmt in current_comments:
+                if cmt not in collected_comments:
+                    collected_comments.append(cmt)
+                    if len(collected_comments) >= max_comments_to_check:
+                        break
+
+            # Скроллим вниз если нужно больше комментариев
+            if len(collected_comments) < max_comments_to_check:
+                driver.execute_script("window.scrollTo(0, document.documentElement.scrollHeight);")
+                time.sleep(2)
+
+                # Проверяем достигли ли мы конца
+                new_height = driver.execute_script("return document.documentElement.scrollHeight")
+                if new_height == last_height:
+                    scroll_attempts += 1
+                last_height = new_height
+
+        # Анализируем собранные комментарии
+        for comment_element in collected_comments[:max_comments_to_check]:
             try:
-                # Получаем текст комментария
-                comment_text = comment_element.find_element(By.CSS_SELECTOR,
-                                                            "p[data-e2e='comment-level-1']").text.lower()
+                comment_text = comment_element.find_element(
+                    By.CSS_SELECTOR, "p[data-e2e='comment-level-1']"
+                ).text.lower()
 
-                # Проверяем совпадение с шаблонами
                 if any(template.lower() in comment_text for template in templates):
-                    # Нажимаем кнопку ответа
-                    reply_button = comment_element.find_element(By.CSS_SELECTOR, "span[data-e2e='reply']")
+                    # Скроллим к нужному комментарию перед взаимодействием
+                    driver.execute_script(
+                        "arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});",
+                        comment_element
+                    )
+                    time.sleep(1)
+
+                    reply_button = comment_element.find_element(
+                        By.CSS_SELECTOR, "span[data-e2e='reply']"
+                    )
                     reply_button.click()
                     time.sleep(1)
 
-                    # Отправляем ответ
-                    send_reply(driver, comment)
-                    return True
+                    if send_reply(driver, comment):
+                        return True
 
             except Exception as e:
                 print(f"Ошибка при обработке комментария: {e}")
                 continue
 
-        print("Не найдено совпадений с шаблонами")
+        print(f"Проверено {len(collected_comments)} комментариев, совпадений не найдено")
         return False
 
     except Exception as e:
-        print(f"Ошибка в функции response_by_template: {e}")
+        print(f"Ошибка в response_by_template: {e}")
         return False
 
 
@@ -220,7 +239,7 @@ def send_reply(driver, comment):
         actions.send_keys(Keys.RETURN)
         actions.perform()
 
-        print("Ответ успешно отправлен")
+        print("Ответ успешно отправлен: {}", comment)
         time.sleep(2)
         return True
 

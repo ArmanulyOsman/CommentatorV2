@@ -1,11 +1,9 @@
 import random
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
 
 import undetected_chromedriver as uc
+
 import TikTokService
-import time
+
 
 def get_comment():
     commments = [
@@ -35,11 +33,11 @@ if __name__ == '__main__':
 
 
 
-    # TikTokService.login(driver, phone, password)
+    TikTokService.login(driver, phone, password)
 
     query = input("Запрос: ")
 
-    TikTokService.process_video_comments(driver, query, get_comment())
+    TikTokService.process_video_comments(driver, query, get_comment(), templates)
 
     driver.quit()
 
