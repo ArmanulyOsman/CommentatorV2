@@ -1,11 +1,4 @@
 import re
-import time
-
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
 TIKTOK_BASE_URL = "https://www.tiktok.com/"
 URL_FOR_FOUND = TIKTOK_BASE_URL + "search/video?lang=ru-RU&q="
@@ -46,16 +39,24 @@ def process_video_comments(driver, search, comment, templates, limit=3):
     if not open_first_video(driver):
         return 0
 
-    while processed_count < limit:
-        if send_comment(driver, comment):
-            if templates:
-                response_by_template(
-                    driver=driver,
-                    templates=templates,
-                    comment=comment,
-                    max_comments_to_check=40,
-                    max_scroll_attempts=3
-                )
+    while processed_count < limit and attempts < 5:
+        try:
+            if send_comment(driver, comment):
+                processed_count += 1
+                attempts = 0
+                print(f"Основной комментарий отправлен ({processed_count}/{limit})")
+
+                if templates:
+                    print("Проверяем комментарии на совпадения...")
+                    response_by_template(driver, templates, comment)
+
+            if processed_count < limit and not go_to_next_video(driver):
+                break
+
+        except Exception as e:
+            print(f"Ошибка в основном цикле: {e}")
+            attempts += 1
+            continue
 
     print(f"Итог: обработано {processed_count} видео")
     return processed_count
@@ -75,37 +76,48 @@ def open_first_video(driver):
         return False
 
 
-def scroll_searched_videos(driver):
-    """Скролл найденных видео"""
-    try:
-        url = "https://www.tiktok.com/@marudeesu/video/7450164012181982469?q=axis&t=1745139751813"
-        driver.get(url)
-        while True:
-            next_button = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-e2e='arrow-right']"))
-            )
-            next_button.click()
-            time.sleep(2)
-        return True
-    except Exception as e:
-        print(f"Не удалось перейти к следующему видео: {e}")
-        return False
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
 
 
 def send_comment(driver, comment):
-    """Отправляет комментарий на текущем видео"""
+    """
+    Улучшенная функция отправки комментария с обработкой "element not interactable"
+
+    :param driver: WebDriver
+    :param comment: Текст комментария
+    :return: True, если комментарий отправлен, иначе False
+    """
     try:
-        time.sleep(1)
+        comment_box = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//div[@data-e2e="comment-input"]'))
+        )
+        comment_box.click()
 
-        actions = ActionChains(driver)
-        actions.send_keys(comment)
-        actions.send_keys(Keys.RETURN)
-        actions.perform()
+        # Вводим текст комментария
+        comment_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"]'))
+        )
+        comment_input.send_keys(comment)
 
-        time.sleep(1)
+        # Отправляем комментарий
+        post_button = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//div[@data-e2e="comment-post"]'))
+        )
+        post_button.click()
+
+        print("Комментарий успешно отправлен!")
+
+        print(f"✅ Sent comment: {comment}")
+        time.sleep(1)  # Пауза перед следующим действием
         return True
+
     except Exception as e:
-        print(f"Ошибка при отправке комментария: {e}")
+        print(f"⚠️ Comment can't sent: {str(e)}")
         return False
 
 def scroll_to_element(driver, element):
@@ -203,7 +215,7 @@ def response_by_template(driver, templates, comment, max_comments_to_check=30, m
                     time.sleep(1)
 
                     reply_button = comment_element.find_element(
-                        By.CSS_SELECTOR, "span[data-e2e='reply']"
+                        By.CSS_SELECTOR, "span[data-e2e='comment-reply-1']"
                     )
                     reply_button.click()
                     time.sleep(1)
@@ -228,12 +240,6 @@ def send_reply(driver, comment):
     Отправляет ответ на комментарий
     """
     try:
-        # Находим поле ввода ответа
-        reply_input = WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='reply-input']")))
-
-        # Вводим текст
-        reply_input.click()
         actions = ActionChains(driver)
         actions.send_keys(comment)
         actions.send_keys(Keys.RETURN)
@@ -250,11 +256,9 @@ def send_reply(driver, comment):
 def go_to_next_video(driver):
     """Переходит к следующему видео используя кнопку вправо"""
     try:
-        next_button = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-e2e='arrow-right']"))
-        )
-        next_button.click()
-        time.sleep(2)  # Ожидание загрузки следующего видео
+        print("Переход к следеещему видео")
+        driver.find_element(By.CSS_SELECTOR, 'button[data-e2e="arrow-right"]').click()
+        time.sleep(3)  # Ожидание загрузки следующего видео
         return True
     except Exception as e:
         print(f"Не удалось перейти к следующему видео: {e}")

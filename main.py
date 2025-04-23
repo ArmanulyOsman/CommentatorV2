@@ -3,7 +3,7 @@ import random
 import undetected_chromedriver as uc
 
 import TikTokService
-
+import time
 
 def get_comment():
     commments = [
@@ -19,9 +19,14 @@ def get_comment():
 templates = [
     'Артикул',
     'Вб',
-    'Вайлбериз',
+    'вб',
+    'Вайлдбериз',
     'wb',
     'wilberries',
+    'заказать',
+    'где',
+    'оригинал',
+    'купить'
 ]
 if __name__ == '__main__':
     driver = uc.Chrome()
