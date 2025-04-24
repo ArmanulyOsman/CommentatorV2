@@ -1,5 +1,3 @@
-import random
-
 import ExcelService
 import undetected_chromedriver as uc
 import TikTokService

@@ -45,8 +45,3 @@ def extract_data_from_excel(file_path) -> Credentials:
         product=product,
         reviews=reviews
     )
-
-
-# Пример использования
-# data = extract_data_from_excel('your_file.xlsx')
-# print(data)
