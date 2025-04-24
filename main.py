@@ -1,48 +1,28 @@
 import random
 
+import ExcelService
 import undetected_chromedriver as uc
-
 import TikTokService
-import time
 
-def get_comment():
-    commments = [
-        "Приобрела по артикулу 246752538 — оригинальный товар, рекомендую!",
-        "Артикул 246752538 — покупкой довольна, это оригинал, рекомендую.",
-        "Взяла по артикулу 246752538, качество отличное, оригинал, советую!",
-        "Покупала по артикулу 246752538 — всё отлично, товар оригинальный, рекомендую.",
-        "Заказала по артикулу 246752538, получила оригинал — рекомендую к покупке.",
-        "Купила по артикулу 246752538, пришёл оригинал, рекомендую однозначно."
-    ]
-    return commments[random.randint(0, len(commments) - 1)]
-
-templates = [
-    'Артикул',
-    'Вб',
-    'вб',
-    'Вайлдбериз',
-    'wb',
-    'wilberries',
-    'заказать',
-    'где',
-    'оригинал',
-    'купить'
-]
 if __name__ == '__main__':
+    with open("templates.txt", "r", encoding="utf-8") as file:
+        templates = [line.rstrip('\n') for line in file]
+    print(templates)
+
+    excel_name = input("File name: ")
+    creds = ExcelService.extract_data_from_excel(excel_name)
+
+    print()
+    print(creds.phone_number)
+    print(creds.password)
+    print(creds.username)
+    print(creds.comments)
+
     driver = uc.Chrome()
 
-    # phone = input("Почта или телефон(без +77): ")
-    # password = input("Пароль: ")
-    phone = "476283763"
-    password = "0u0p4M4u@!"
-    username = "mrBreakfast"
+    TikTokService.login(driver, str(creds.phone_number), str(creds.password))
 
-
-    TikTokService.login(driver, phone, password)
-
-    query = input("Запрос: ")
-
-    TikTokService.process_video_comments(driver, query, get_comment(), templates, username)
+    TikTokService.process_video_comments(driver, str(creds.query),
+                                         creds.comments, templates, str(creds.username))
 
     driver.quit()
-

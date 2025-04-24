@@ -1,4 +1,11 @@
 import re
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+import random
 
 TIKTOK_BASE_URL = "https://www.tiktok.com/"
 URL_FOR_FOUND = TIKTOK_BASE_URL + "search/video?lang=ru-RU&q="
@@ -20,6 +27,7 @@ def login(driver, username, password):
         slow_writer(editor, password)
 
         editor.send_keys(Keys.ENTER)
+        input("Is log?: ")
     except Exception as e:
         print(f"Ошибка: {e}")
 
@@ -28,7 +36,7 @@ def is_valid_email(email: str) -> bool:
     return re.match(pattern, email) is not None
 
 
-def process_video_comments(driver, search, comment, templates, username, limit=3):
+def process_video_comments(driver, search, comments, templates, username, limit=200):
     """Основная функция для обработки видео с возможностью ответа на комментарии"""
     if not open_search_page(driver, search):
         return 0
@@ -38,18 +46,24 @@ def process_video_comments(driver, search, comment, templates, username, limit=3
 
     if not open_first_video(driver):
         return 0
+    close_some_icon(driver)
 
     while processed_count < limit and attempts < 5:
         try:
-            if send_comment(driver, comment):
+            if send_comment(driver, comments[random.randint(0, len(templates) - 1)]):
                 processed_count += 1
                 attempts = 0
                 print(f"Основной комментарий отправлен ({processed_count}/{limit})")
 
                 if templates:
                     print("Проверяем комментарии на совпадения...")
-                    response_by_template(driver, templates, comment, username)
-
+                    replies_sent = response_by_template(
+                        driver=driver,
+                        templates=templates,
+                        reply_comments=comments,
+                        username=username
+                    )
+                    print(f"На видео {processed_count} отправлено {replies_sent} ответов")
             if processed_count < limit and not go_to_next_video(driver):
                 break
 
@@ -75,14 +89,14 @@ def open_first_video(driver):
         print(f"Не удалось открыть первое видео: {e}")
         return False
 
-
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
-
+def close_some_icon(driver):
+    try:
+        close_btn = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "div[class='css-mp9aqo-DivIconCloseContainer e1vz198y6']")))
+        close_btn.click()
+    except Exception as e:
+        print(f"Some icon not found: {str(e)} ")
 
 def send_comment(driver, comment):
     """
@@ -155,7 +169,7 @@ def open_search_page(driver, search):
         print(f"Ошибка при загрузке страницы поиска: {e}")
         return False
 
-def response_by_template(driver, templates, reply_text, username, max_comments=30):
+def response_by_template(driver, templates, username, reply_comments, max_comments=100):
     """
     Анализирует комментарии, игнорируя свои, и отвечает по шаблонам
 
@@ -170,6 +184,7 @@ def response_by_template(driver, templates, reply_text, username, max_comments=3
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-1i7ohvi-DivCommentItemContainer")))
 
+        replies_sent = 0
         comments = driver.find_elements(By.CSS_SELECTOR, "div.css-1i7ohvi-DivCommentItemContainer")[:max_comments]
 
         for comment in comments:
@@ -182,8 +197,9 @@ def response_by_template(driver, templates, reply_text, username, max_comments=3
 
                 # Получаем текст комментария
                 comment_text = comment.find_element(
-                    By.CSS_SELECTOR, "span[data-e2e='comment-reply-1']"
+                    By.CSS_SELECTOR, "p[data-e2e='comment-level-1']"
                 ).text.lower()
+                print(f"Проверить: {comment_text}")
 
                 # Проверяем совпадение с шаблонами
                 if any(template.lower() in comment_text for template in templates):
@@ -195,24 +211,24 @@ def response_by_template(driver, templates, reply_text, username, max_comments=3
                     time.sleep(1)
 
                     # Нажимаем "Ответить"
-                    comment.find_element(By.CSS_SELECTOR, "span[data-e2e='reply']").click()
+                    comment.find_element(By.CSS_SELECTOR, "span[data-e2e='comment-reply-1']").click()
                     time.sleep(1)
+                    reply_text = reply_comments[random.randint(0, len(reply_comments) - 1)]
 
                     # Отправляем ответ
                     if send_reply(driver, reply_text):
+                        replies_sent += 1
                         print(f"✅ Ответ отправлен на комментарий: {comment_text[:50]}...")
-                        return True
-
             except Exception as e:
                 print(f"⚠️ Ошибка при обработке комментария: {e}")
                 continue
 
         print("🔍 Совпадений с шаблонами не найдено (или все подходящие комментарии - свои)")
-        return False
+        return replies_sent
 
     except Exception as e:
         print(f"❌ Ошибка в response_by_template: {e}")
-        return False
+        return 0
 
 def send_reply(driver, comment):
     """

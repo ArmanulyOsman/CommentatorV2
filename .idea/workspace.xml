@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b628d7b-80c9-45e5-80c6-68cdbfd70037" name="Changes" comment="modify send comment and scroll video">
+    <list default="true" id="9b628d7b-80c9-45e5-80c6-68cdbfd70037" name="Changes" comment="first fix response by template">
+      <change afterPath="$PROJECT_DIR$/Credentials.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ExcelService.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/axis-y.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirmenents.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TikTokService.py" beforeDir="false" afterPath="$PROJECT_DIR$/TikTokService.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
@@ -44,9 +49,15 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "main",
+    "last_opened_file_path": "/Users/armanlyosman/PycharmProjects/CommentatorV2",
     "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="CommentatorV2" />
@@ -142,7 +153,15 @@
       <option name="project" value="LOCAL" />
       <updated>1745434992029</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="first fix response by template">
+      <option name="closed" value="true" />
+      <created>1745436165759</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1745436165759</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -163,6 +182,7 @@
     <MESSAGE value="response by template" />
     <MESSAGE value="scroll comments to response" />
     <MESSAGE value="modify send comment and scroll video" />
-    <option name="LAST_COMMIT_MESSAGE" value="modify send comment and scroll video" />
+    <MESSAGE value="first fix response by template" />
+    <option name="LAST_COMMIT_MESSAGE" value="first fix response by template" />
   </component>
 </project>
