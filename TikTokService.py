@@ -36,7 +36,7 @@ def is_valid_email(email: str) -> bool:
     return re.match(pattern, email) is not None
 
 
-def process_video_comments(driver, search, comments, templates, username, limit=200):
+def process_video_comments(driver, search, comments, templates, username, tracker, limit=200):
     """Основная функция для обработки видео с возможностью ответа на комментарии"""
     if not open_search_page(driver, search):
         return 0
@@ -50,20 +50,40 @@ def process_video_comments(driver, search, comments, templates, username, limit=
 
     while processed_count < limit and attempts < 5:
         try:
-            if send_comment(driver, comments[random.randint(0, len(templates) - 1)]):
-                processed_count += 1
-                attempts = 0
-                print(f"Основной комментарий отправлен ({processed_count}/{limit})")
+            comment = comments[random.randint(0, len(templates) - 1)]
+            # Получаем текущий URL видео
+            current_url = driver.current_url
+            video_id = tracker.extract_video_id(current_url)
 
-                if templates:
-                    print("Проверяем комментарии на совпадения...")
-                    replies_sent = response_by_template(
-                        driver=driver,
-                        templates=templates,
-                        reply_comments=comments,
-                        username=username
-                    )
-                    print(f"На видео {processed_count} отправлено {replies_sent} ответов")
+            if not video_id:
+                print("Не удалось извлечь ID видео")
+                attempts += 1
+                continue
+
+            if tracker.already_commented(video_id):
+                print(f"Видео {video_id} уже комментировалось")
+                attempts += 1
+            else:
+                if send_comment(driver, comment):
+                    tracker.mark_as_commented(video_id, comment, username)
+                    processed_count += 1
+                    print(f"Комментарий отправлен ({processed_count}/{limit})")
+                    attempts = 0
+                else:
+                    attempts += 1
+                # if templates:
+                #     print("Проверяем комментарии на совпадения...")
+                #     replies_sent = response_by_template(
+                #         driver=driver,
+                #         templates=templates,
+                #         reply_comments=comments,
+                #         username=username
+                #     )
+                #     print(f"На видео {processed_count} отправлено {replies_sent} ответов")
+            # Переход к следующему видео
+            if not go_to_next_video(driver):
+                break
+
             if processed_count < limit and not go_to_next_video(driver):
                 break
 
