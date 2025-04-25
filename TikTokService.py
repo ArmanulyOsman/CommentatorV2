@@ -71,15 +71,15 @@ def process_video_comments(driver, search, comments, templates, username, tracke
                     attempts = 0
                 else:
                     attempts += 1
-                # if templates:
-                #     print("Проверяем комментарии на совпадения...")
-                #     replies_sent = response_by_template(
-                #         driver=driver,
-                #         templates=templates,
-                #         reply_comments=comments,
-                #         username=username
-                #     )
-                #     print(f"На видео {processed_count} отправлено {replies_sent} ответов")
+                if templates:
+                    print("Проверяем комментарии на совпадения...")
+                    replies_sent = response_by_template(
+                        driver=driver,
+                        templates=templates,
+                        reply_comments=comments,
+                        username=username
+                    )
+                    print(f"На видео {processed_count} отправлено {replies_sent} ответов")
             # Переход к следующему видео
             if not go_to_next_video(driver):
                 break
@@ -122,8 +122,6 @@ def send_comment(driver, comment):
     """
     Улучшенная функция отправки комментария с обработкой "element not interactable"
 
-    :param driver: WebDriver
-    :param comment: Текст комментария
     :return: True, если комментарий отправлен, иначе False
     """
     try:
@@ -193,7 +191,6 @@ def response_by_template(driver, templates, username, reply_comments, max_commen
     """
     Анализирует комментарии, игнорируя свои, и отвечает по шаблонам
 
-    :param driver: WebDriver
     :param templates: list - фразы для поиска в комментариях
     :param reply_text: str - текст ответа
     :param username: str - ваш username (чтобы игнорировать свои комментарии)
