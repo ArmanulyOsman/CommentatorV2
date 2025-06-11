@@ -46,7 +46,6 @@ def process_video_comments(driver, search, comments, templates, username, tracke
 
     if not open_first_video(driver):
         return 0
-    close_some_icon(driver)
 
     while processed_count < limit and attempts < 5:
         try:
@@ -100,7 +99,7 @@ def open_first_video(driver):
     try:
         first_video = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
-                (By.CSS_SELECTOR, "div[data-e2e='search_video-item-list'] > div:first-child"))
+                (By.CSS_SELECTOR, "div[data-e2e='search_video-item'] > div:first-child"))
         )
         first_video.click()
         time.sleep(2)
@@ -180,7 +179,7 @@ def open_search_page(driver, search):
     try:
         driver.get(URL_FOR_FOUND + search)
         WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='search_video-item-list']"))
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='search_video-item']"))
         )
         return True
     except Exception as e:

@@ -11,7 +11,7 @@ if __name__ == '__main__':
     print(templates)
 
     excel_name = input("File name: ")
-    creds = ExcelService.extract_data_from_excel(excel_name)
+    creds = ExcelService.extract_data_from_excel("resources/" + excel_name)
 
     print()
     print(creds.phone_number)
